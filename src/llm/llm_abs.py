@@ -18,7 +18,7 @@ class QuestionDTO:
 @dataclass
 class AnswerDTO:
     text: str
-    ised_tokens: int
+    used_tokens: int
 
 
 class LLMService(ABC):
