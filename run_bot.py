@@ -12,8 +12,9 @@ from src.llm.llm import OllamaLLMService, QuestionDTO
 
 
 TOKEN = os.environ["TELEGRAM_TOKEN"]
+API_KEY = os.environ["API_KEY"]
 
-llm = OllamaLLMService(model_name="llama3.2:3b", ollama_base_url="http://localhost:11434")
+llm = OllamaLLMService(model_name="llama3.2:3b", ollama_base_url="http://localhost:11434", api_key=API_KEY)
 
 
 dp = Dispatcher(storage=MemoryStorage())

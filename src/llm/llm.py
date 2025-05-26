@@ -12,10 +12,11 @@ class OllamaLLMService(LLMService):
         ("human", "{question}"),
     ]
 
-    def __init__(self, model_name: str, ollama_base_url: str):
+    def __init__(self, model_name: str, ollama_base_url: str, api_key: str):
         llm = ChatOpenAI(
             model=model_name,
             base_url=f"{ollama_base_url}/v1",
+            api_key=api_key
         )
         prompt = ChatPromptTemplate(self._MESSAGES)
         self._chain = prompt | llm
