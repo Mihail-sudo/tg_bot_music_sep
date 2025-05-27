@@ -11,6 +11,9 @@ from aiogram import F
 from src.llm.llm import OllamaLLMService, QuestionDTO
 from src.llm.llm_abs import MessageDTO
 
+from dotenv import load_dotenv
+load_dotenv()
+
 
 TOKEN = os.environ["TELEGRAM_TOKEN"]
 API_KEY = os.environ["API_KEY"]
