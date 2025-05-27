@@ -3,12 +3,13 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
+from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message
 from aiogram import F
 
-
 from src.llm.llm import OllamaLLMService, QuestionDTO
+from src.llm.llm_abs import MessageDTO
 
 
 TOKEN = os.environ["TELEGRAM_TOKEN"]
@@ -20,14 +21,21 @@ llm = OllamaLLMService(model_name="llama3.2:3b", ollama_base_url="http://localho
 dp = Dispatcher(storage=MemoryStorage())
 
 @dp.message(F.text)
-async def handle_music_query(message: Message):
+async def handle_music_query(message: Message, state: FSMContext):
     user_query = message.text.strip()
+
+    data = await state.get_data()
+    history = data.get("history", [])
+    history.append(MessageDTO(role = "human", text=user_query))
+
     await message.reply("Подожди секунду... думаю над ответом 🧠")
 
-    bot_response = await llm.execute(QuestionDTO(text=user_query, history=[]))
+    bot_response = await llm.execute(QuestionDTO(text=user_query, history=history))
+
+    await state.update_data(history=history)
 
     for chunk in [bot_response.text[i:i+4096] for i in range(0, len(bot_response.text), 4096)]:
-        await message.reply(bot_response.text)
+        await message.reply(chunk)
 
 
 async def main():

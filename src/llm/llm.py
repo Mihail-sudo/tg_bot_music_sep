@@ -26,6 +26,7 @@ class OllamaLLMService(LLMService):
             "question": data.text,
             "history": [(message.role, message.text) for message in data.history]
         })
+
         response = cast(AIMessage, response)
         return AnswerDTO(
             text=response.content,
