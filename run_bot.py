@@ -17,7 +17,6 @@ API_KEY = os.environ["API_KEY"]
 
 llm = OllamaLLMService(model_name="llama3.2:3b", ollama_base_url="http://localhost:11434", api_key=API_KEY)
 
-
 dp = Dispatcher(storage=MemoryStorage())
 
 @dp.message(F.text)
@@ -26,16 +25,19 @@ async def handle_music_query(message: Message, state: FSMContext):
 
     data = await state.get_data()
     history = data.get("history", [])
-    history.append(MessageDTO(role = "human", text=user_query))
 
     await message.reply("Подожди секунду... думаю над ответом 🧠")
 
     bot_response = await llm.execute(QuestionDTO(text=user_query, history=history))
 
-    await state.update_data(history=history)
-
+    full_text = ''
     for chunk in [bot_response.text[i:i+4096] for i in range(0, len(bot_response.text), 4096)]:
+        full_text += chunk
         await message.reply(chunk)
+
+    history.append(MessageDTO(role='human', text=user_query))
+    history.append(MessageDTO(role='assistant', text=full_text))
+    await state.update_data(history=history)
 
 
 async def main():
