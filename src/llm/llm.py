@@ -1,6 +1,6 @@
 from .llm_abs import LLMService, AnswerDTO, QuestionDTO
 from typing import cast
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, trim_messages
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 
@@ -19,7 +19,17 @@ class OllamaLLMService(LLMService):
             api_key=api_key
         )
         prompt = ChatPromptTemplate(self._MESSAGES)
-        self._chain = prompt | llm
+
+        trimmer = trim_messages(
+            strategy="last",
+            token_counter=len,
+            max_tokens=6,
+            start_on="human",
+            end_on="human",
+            include_system=True,
+            allow_partial=False
+        )
+        self._chain = prompt | trimmer | llm
 
     async def execute(self, data: QuestionDTO) -> AnswerDTO:
         response = await self._chain.ainvoke({

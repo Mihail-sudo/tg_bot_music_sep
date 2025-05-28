@@ -2,14 +2,15 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 from aiogram import F
 from aiogram.fsm.context import FSMContext
-from src.llm.llm_abs import QuestionDTO, MessageDTO
+from src.llm.llm_abs import QuestionDTO, MessageDTO, LLMService
+
 
 from dotenv import load_dotenv
 load_dotenv()
 
 
 class MusicBot:
-    def __init__(self, token, llm_model):
+    def __init__(self, token: str, llm_model: LLMService):
         self.bot = Bot(token=token)
         self.llm = llm_model
 
@@ -25,8 +26,7 @@ class MusicBot:
         data = await state.get_data()
         history = data.get("history", [])
 
-        await message.reply("Подожди секунду... думаю над ответом 🧠")
-
+        await self.bot.send_chat_action(chat_id=message.from_user.id, action='typing')
         bot_response = await self.llm.execute(QuestionDTO(text=user_query, history=history))
 
         full_text = ''
