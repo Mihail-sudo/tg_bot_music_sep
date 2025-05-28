@@ -22,14 +22,14 @@ async def search_lyrics(artist: str, title: str, timeout: int = 10) -> Optional[
                 lyrics = data['lyrics']
                 return lyrics
             else:
-                return "Текст песни не найден в ответе API"
+                return "There is no lyrics for this song"
 
     except httpx.HTTPStatusError as e:
         print(f"Ошибка HTTP: {e}")
-        return None
+        return "This song is not in database"
     except httpx.RequestError as e:
         print(f"Ошибка сети: {e}")
-        return None
+        return "Internet connection is bad"
 
 
 

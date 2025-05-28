@@ -23,7 +23,7 @@ class OllamaLLMService(LLMService):
         self._chain = self._create_chain()
 
         self._agent_prompt = ChatPromptTemplate.from_messages([
-            ("system", "You can use tools to find lyrics and other music-related data."),
+            ("system", "You can use tools to find lyrics. Answer should be a full song text."),
             MessagesPlaceholder("history"),
             ("human", "{input}"),
             MessagesPlaceholder("agent_scratchpad")
