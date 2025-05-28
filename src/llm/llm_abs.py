@@ -11,6 +11,7 @@ class MessageDTO:
 
 @dataclass
 class QuestionDTO:
+    user_id: int
     text: str
     history: list[MessageDTO]
 

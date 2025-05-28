@@ -22,12 +22,13 @@ class MusicBot:
 
     async def handle_music_query(self, message: Message, state: FSMContext):
         user_query = message.text.strip()
+        user_id = message.from_user.id
 
         data = await state.get_data()
         history = data.get("history", [])
 
-        await self.bot.send_chat_action(chat_id=message.from_user.id, action='typing')
-        bot_response = await self.llm.execute(QuestionDTO(text=user_query, history=history))
+        await self.bot.send_chat_action(chat_id=user_id, action='typing')
+        bot_response = await self.llm.execute(QuestionDTO(text=user_query, history=history, user_id=user_id))
 
         full_text = ''
         for chunk in [bot_response.text[i:i+4096] for i in range(0, len(bot_response.text), 4096)]:
