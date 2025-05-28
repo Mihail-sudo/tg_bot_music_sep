@@ -5,10 +5,6 @@ from aiogram.fsm.context import FSMContext
 from src.llm.llm_abs import QuestionDTO, MessageDTO, LLMService
 
 
-from dotenv import load_dotenv
-load_dotenv()
-
-
 class MusicBot:
     def __init__(self, token: str, llm_model: LLMService):
         self.bot = Bot(token=token)

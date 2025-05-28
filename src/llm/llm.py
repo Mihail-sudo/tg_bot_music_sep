@@ -4,22 +4,31 @@ from langchain_core.messages import AIMessage, BaseMessage, trim_messages
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.chat_history import InMemoryChatMessageHistory, BaseChatMessageHistory
+from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_openai import ChatOpenAI
-from .utils import token_counter
+from .utils import token_counter, requires_tool
+from .tools import tools
 
 
 class OllamaLLMService(LLMService):
-    _MESSAGES = [
-        ("system", "You are musician assistant"),
-        MessagesPlaceholder("history"),
-        ("human", "{question}"),
-    ]
-
     def __init__(self, model_name: str, ollama_base_url: str, api_key: str):
         self._model = self._create_model(model_name, ollama_base_url, api_key)
-        self._promt = self._create_promt()
+        self._promt = ChatPromptTemplate.from_messages([
+            ("system", "You are musician assistant"),
+            MessagesPlaceholder("history"),
+            ("human", "{question}"),
+        ])
+
         self._trimmer = self._create_trimmer()
         self._chain = self._create_chain()
+
+        self._agent_prompt = ChatPromptTemplate.from_messages([
+            ("system", "You can use tools to find lyrics and other music-related data."),
+            MessagesPlaceholder("history"),
+            ("human", "{input}"),
+            MessagesPlaceholder("agent_scratchpad")
+        ])
+        self._agent = self._create_agent()
 
     def _create_model(self, model_name: str, base_url: str, api_key: str) -> ChatOpenAI:
         return ChatOpenAI(
@@ -28,8 +37,9 @@ class OllamaLLMService(LLMService):
             api_key=api_key
         )
     
-    def _create_promt(self) -> ChatPromptTemplate:
-        return ChatPromptTemplate(self._MESSAGES)
+    def _create_agent(self) -> AgentExecutor:
+        agent = create_tool_calling_agent(self._model, tools, self._agent_prompt)
+        return AgentExecutor(agent=agent, tools=tools, verbose=True)
     
     def _create_trimmer(self) -> Callable[[list[BaseMessage]], list[BaseMessage]]:
         return trim_messages(
@@ -59,6 +69,13 @@ class OllamaLLMService(LLMService):
         )
 
     async def execute(self, data: QuestionDTO) -> AnswerDTO:
+        if requires_tool(data.text):
+            print()
+            return await self._run_agent(data)
+        else:
+            return await self._run_model(data)
+
+    async def _run_model(self, data: QuestionDTO) -> AnswerDTO:
         response = await self._chain.ainvoke({
             "question": data.text,
             "history": [(message.role, message.text) for message in data.history],
@@ -68,4 +85,15 @@ class OllamaLLMService(LLMService):
         return AnswerDTO(
             text=response.content,
             used_tokens=response.usage_metadata.get("total_tokens", 0)
+        )
+    
+    async def _run_agent(self, data: QuestionDTO) -> AnswerDTO:
+        input_dict = {
+            "input": data.text,
+            "history": [(message.role, message.text) for message in data.history]
+        }
+        response = await self._agent.ainvoke(input_dict)
+        return AnswerDTO(
+            text=response["output"],
+            used_tokens=0
         )
