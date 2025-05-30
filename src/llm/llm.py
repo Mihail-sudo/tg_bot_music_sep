@@ -13,7 +13,7 @@ from .tools import tools
 class OllamaLLMService(LLMService):
     def __init__(self, model_name: str, ollama_base_url: str, api_key: str):
         self._model = self._create_model(model_name, ollama_base_url, api_key)
-        self._promt = ChatPromptTemplate.from_messages([
+        self._prompt = ChatPromptTemplate.from_messages([
             ("system", "You are musician assistant"),
             MessagesPlaceholder("history"),
             ("human", "{question}"),
@@ -23,7 +23,10 @@ class OllamaLLMService(LLMService):
         self._chain = self._create_chain()
 
         self._agent_prompt = ChatPromptTemplate.from_messages([
-            ("system", "You can use tools to find lyrics. Answer should be a full song text."),
+            ("system", """
+                You can use tools to find lyrics. Answer should be a full song text.
+                Don't try to imagine song text. If you should to find the song text use tool search lyrics
+             """),
             MessagesPlaceholder("history"),
             ("human", "{input}"),
             MessagesPlaceholder("agent_scratchpad")
@@ -59,7 +62,7 @@ class OllamaLLMService(LLMService):
                 store[session_id] = InMemoryChatMessageHistory()
             return store[session_id]
 
-        chain = self._promt | self._trimmer | self._model
+        chain = self._prompt | self._trimmer | self._model
 
         return RunnableWithMessageHistory(
             chain,
